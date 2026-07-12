@@ -18,6 +18,26 @@ guarded-selectors:
 # The word you add to the end of a command to confirm it.
 confirmation-keyword: "confirm"
 
+# Functions are a CHAIN of commands. When someone runs "/function pack:name"
+# (or "/execute ... run function ..."), the whole chain is read from the
+# datapack file -- following nested function calls and #tags -- and if ANY
+# command in it targets a guarded selector, the invocation is blocked until
+# confirmed. Confirm with e.g. "/function pack:name confirm".
+scan-functions: true
+
+# If a referenced function file can't be read (for example built-in/bundled
+# datapacks that live inside the server jar), should it be treated as needing
+# confirmation? Off by default, so pre-written functions you can't scan don't
+# nag you. Turn on for maximum paranoia.
+confirm-unreadable-functions: false
+
+# Command blocks can't type "confirm", so guarding them would block an @e
+# command block forever and break redstone contraptions. They are therefore
+# left alone by default. Note: Bukkit provides no reliable event for command
+# block execution anyway, so this only has any effect on server software that
+# routes command blocks through ServerCommandEvent. Turn on at your own risk.
+guard-command-blocks: false
+
 # If true, players/console with the "antientityteleport.bypass" permission
 # skip the confirmation entirely and their @e commands run immediately.
 allow-bypass-permission: true
@@ -30,6 +50,8 @@ log-to-console: true
 messages:
   prefix: "&8[&cAntiEntityTeleport&8]&r "
   warning: "&e⚠ Whoa! Your command targets &c{selector}&e (ALL entities). Double-check this is what you want."
+  warning-function: "&e⚠ Function &c{function}&e runs a command targeting &c{selector}&e (ALL entities), in &c{inner}&e."
+  warning-unreadable-function: "&e⚠ Couldn't verify function &c{function}&e. Confirming to be safe."
   how-to-confirm: "&7Re-type the same command with &f{keyword}&7 on the end to run it. Example: &f{command}"
   click-to-confirm: "&a[Click here to add '&fconfirm&a' & run it]"
   confirmed: "&aConfirmed. Running your command..."

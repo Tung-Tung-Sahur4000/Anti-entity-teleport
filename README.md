@@ -39,6 +39,47 @@ entirely through event listeners.
 Matching is whole-token, so `@e` and `@e[type=item]` are caught, while things
 like `@a`, `@p`, `@s` and words such as `@executor` are left alone.
 
+This works for **players typing in chat** and the **console** — both fire a
+Bukkit command event that the plugin listens to.
+
+## Functions (a whole chain of commands)
+
+A function isn't one command — it's a chain, and it can call other functions
+and `#tags`. The individual commands inside a `.mcfunction` file never fire a
+Bukkit event, so they can't be caught one-by-one. Instead, when someone runs
+the entry point:
+
+```
+/function my:cleanup
+/execute as @a at @s run function my:cleanup
+```
+
+the plugin **reads the function file from the datapack and scans the entire
+chain** — following nested `function` calls and function `#tags` (with cycle
+protection) — and if **any** command in that chain targets `@e`, the whole
+invocation is blocked:
+
+```
+[AntiEntityTeleport] ⚠ Function my:cleanup runs a command targeting @e (ALL entities), in my:cleanup.
+[AntiEntityTeleport] Re-type the same command with confirm on the end to run it. Example: /function my:cleanup confirm
+```
+
+Confirm the same way: `/function my:cleanup confirm`.
+
+Functions that live inside the server jar / bundled datapacks can't be read from
+disk; by default those are allowed through (they're pre-written, not typos). Set
+`confirm-unreadable-functions: true` if you want to be asked about those too.
+
+## Command blocks
+
+Bukkit provides **no event** for a command block executing a command, so a
+command block running `/kill @e` cannot be intercepted at execution time without
+NMS or ProtocolLib packet manipulation — and "confirm in chat" is meaningless
+for an automated, redstone-triggered block anyway. Command blocks are therefore
+**left alone by default** (see `guard-command-blocks`) so this plugin never
+silently breaks a working contraption. If you want command-block protection,
+that needs a heavier packet/NMS approach — open an issue and we can discuss it.
+
 ## Permissions
 
 | Permission | Default | Meaning |
@@ -49,10 +90,13 @@ like `@a`, `@p`, `@s` and words such as `@executor` are left alone.
 
 ```yaml
 guarded-selectors:
-  - "@e"                       # add more if you like, e.g. "@r"
+  - "@e"                          # add more if you like, e.g. "@r"
 confirmation-keyword: "confirm"
-allow-bypass-permission: true  # honor antientityteleport.bypass
-log-to-console: true           # print a warning when a command is caught
+scan-functions: true             # read /function chains and gate @e inside them
+confirm-unreadable-functions: false
+guard-command-blocks: false      # leave command blocks alone (see above)
+allow-bypass-permission: true    # honor antientityteleport.bypass
+log-to-console: true             # print a warning when a command is caught
 messages:
   # fully customizable, & color codes supported
 ```

@@ -29,9 +29,14 @@ public final class AntiEntityTeleport extends JavaPlugin {
     /** Compiled matchers for every guarded selector, built from the config. */
     private List<GuardedSelector> guardedSelectors = new ArrayList<>();
 
+    private final FunctionScanner functionScanner = new FunctionScanner(this);
+
     private String confirmationKeyword;
     private boolean allowBypassPermission;
     private boolean logToConsole;
+    private boolean scanFunctions;
+    private boolean confirmUnreadableFunctions;
+    private boolean guardCommandBlocks;
 
     @Override
     public void onEnable() {
@@ -70,6 +75,9 @@ public final class AntiEntityTeleport extends JavaPlugin {
         this.confirmationKeyword = keyword.trim();
         this.allowBypassPermission = getConfig().getBoolean("allow-bypass-permission", true);
         this.logToConsole = getConfig().getBoolean("log-to-console", true);
+        this.scanFunctions = getConfig().getBoolean("scan-functions", true);
+        this.confirmUnreadableFunctions = getConfig().getBoolean("confirm-unreadable-functions", false);
+        this.guardCommandBlocks = getConfig().getBoolean("guard-command-blocks", false);
     }
 
     /**
@@ -127,6 +135,22 @@ public final class AntiEntityTeleport extends JavaPlugin {
 
     public String getConfirmationKeyword() {
         return confirmationKeyword;
+    }
+
+    public boolean isScanFunctions() {
+        return scanFunctions;
+    }
+
+    public boolean isConfirmUnreadableFunctions() {
+        return confirmUnreadableFunctions;
+    }
+
+    public boolean isGuardCommandBlocks() {
+        return guardCommandBlocks;
+    }
+
+    public FunctionScanner getFunctionScanner() {
+        return functionScanner;
     }
 
     /** Fetches a message from config, applies color codes and known placeholders. */
