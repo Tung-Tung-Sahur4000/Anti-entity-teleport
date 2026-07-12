@@ -1,13 +1,10 @@
 package com.tungtungsahur.antientityteleport;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -15,21 +12,24 @@ import java.util.regex.Pattern;
  *
  * <p>Every command a player or the console runs is inspected. If it contains a
  * guarded target selector (by default {@code @e}, which targets ALL entities in
- * the world) the command is cancelled the first time and only runs when the
- * exact same command is typed again within a short window. There is no custom
- * command to learn: the vanilla command itself is the confirmation. This turns
- * the classic "I typed /tp @e instead of /tp @a" disaster into a harmless
- * double-check.</p>
+ * the world) it is blocked. To actually run it you re-type the same command
+ * with the word {@code confirm} added to the end:</p>
+ *
+ * <pre>
+ *   /tp @e noobgamer23           -&gt; blocked, asks you to confirm
+ *   /tp @e noobgamer23 confirm   -&gt; runs /tp @e noobgamer23
+ * </pre>
+ *
+ * <p>This turns the classic "I typed /tp @e instead of /tp @a" disaster into a
+ * harmless double-check, and works for kill, tp, data, or any other command
+ * that can target {@code @e}.</p>
  */
 public final class AntiEntityTeleport extends JavaPlugin {
-
-    /** Pending commands keyed by a stable id for the sender (see {@link #senderKey}). */
-    private final Map<String, PendingCommand> pending = new ConcurrentHashMap<>();
 
     /** Compiled matchers for every guarded selector, built from the config. */
     private List<GuardedSelector> guardedSelectors = new ArrayList<>();
 
-    private long confirmationTimeoutMillis;
+    private String confirmationKeyword;
     private boolean allowBypassPermission;
     private boolean logToConsole;
 
@@ -40,12 +40,8 @@ public final class AntiEntityTeleport extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new CommandGuardListener(this), this);
 
-        getLogger().info("Enabled. Guarding selectors: " + describeGuardedSelectors());
-    }
-
-    @Override
-    public void onDisable() {
-        pending.clear();
+        getLogger().info("Enabled. Guarding selectors: " + describeGuardedSelectors()
+                + " (confirm with the word '" + confirmationKeyword + "').");
     }
 
     /** (Re)reads all values from config.yml into memory. */
@@ -67,11 +63,11 @@ public final class AntiEntityTeleport extends JavaPlugin {
         }
         this.guardedSelectors = compiled;
 
-        long timeoutSeconds = getConfig().getLong("confirmation-timeout-seconds", 30L);
-        if (timeoutSeconds <= 0) {
-            timeoutSeconds = 30L;
+        String keyword = getConfig().getString("confirmation-keyword", "confirm");
+        if (keyword == null || keyword.trim().isEmpty()) {
+            keyword = "confirm";
         }
-        this.confirmationTimeoutMillis = timeoutSeconds * 1000L;
+        this.confirmationKeyword = keyword.trim();
         this.allowBypassPermission = getConfig().getBoolean("allow-bypass-permission", true);
         this.logToConsole = getConfig().getBoolean("log-to-console", true);
     }
@@ -95,52 +91,28 @@ public final class AntiEntityTeleport extends JavaPlugin {
         return null;
     }
 
-    // ---- Pending command storage ------------------------------------
-
-    /** Remembers that this sender was warned about this exact command. */
-    public void storePending(CommandSender sender, String normalizedCommand) {
-        pending.put(senderKey(sender),
-                new PendingCommand(normalizedCommand, System.currentTimeMillis() + confirmationTimeoutMillis));
+    /** True if the command's last word is the confirmation keyword. */
+    public boolean hasConfirmationSuffix(String command) {
+        if (command == null) {
+            return false;
+        }
+        String trimmed = command.trim();
+        int lastSpace = trimmed.lastIndexOf(' ');
+        if (lastSpace < 0) {
+            return false; // just one word, so no real command before "confirm"
+        }
+        String lastWord = trimmed.substring(lastSpace + 1);
+        return lastWord.equalsIgnoreCase(confirmationKeyword);
     }
 
     /**
-     * If the sender has an unexpired pending command equal to the one they just
-     * typed, consumes it and returns {@code true} (meaning "confirmed, let it
-     * run"). Otherwise returns {@code false}, and any stale/expired pending is
-     * cleared as a side effect.
+     * Removes the trailing confirmation keyword and returns the real command
+     * that should actually be run. Assumes {@link #hasConfirmationSuffix} is true.
      */
-    public boolean consumeIfMatches(CommandSender sender, String normalizedCommand) {
-        String key = senderKey(sender);
-        PendingCommand entry = pending.get(key);
-        if (entry == null) {
-            return false;
-        }
-        if (entry.isExpired()) {
-            pending.remove(key);
-            return false;
-        }
-        if (entry.getCommand().equals(normalizedCommand)) {
-            pending.remove(key);
-            return true;
-        }
-        // A different guarded command -- it needs its own confirmation.
-        return false;
-    }
-
-    /** A stable identity for a sender so console and each player get their own slot. */
-    private String senderKey(CommandSender sender) {
-        if (sender instanceof org.bukkit.entity.Player) {
-            return "player:" + ((org.bukkit.entity.Player) sender).getUniqueId();
-        }
-        return "other:" + sender.getName();
-    }
-
-    /** Collapses runs of whitespace and trims, so re-typing with odd spacing still matches. */
-    public String normalizeCommand(String command) {
-        if (command == null) {
-            return "";
-        }
-        return command.trim().replaceAll("\\s+", " ");
+    public String stripConfirmationSuffix(String command) {
+        String trimmed = command.trim();
+        int lastSpace = trimmed.lastIndexOf(' ');
+        return trimmed.substring(0, lastSpace).trim();
     }
 
     // ---- Config accessors -------------------------------------------
@@ -153,8 +125,8 @@ public final class AntiEntityTeleport extends JavaPlugin {
         return logToConsole;
     }
 
-    public long getConfirmationTimeoutSeconds() {
-        return confirmationTimeoutMillis / 1000L;
+    public String getConfirmationKeyword() {
+        return confirmationKeyword;
     }
 
     /** Fetches a message from config, applies color codes and known placeholders. */

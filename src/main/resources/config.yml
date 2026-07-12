@@ -1,10 +1,12 @@
 # =====================================================================
 #  AntiEntityTeleport configuration
 #  Any vanilla command that contains a guarded selector (@e by default)
-#  is held back the first time and only runs if you type the SAME command
-#  again to confirm. This stops the classic "/tp @e" instead of "/tp @a"
-#  accident. There is no custom command -- the vanilla command IS the
-#  confirmation.
+#  is blocked. To run it, type the SAME command again with the word
+#  "confirm" on the end. This stops the classic "/tp @e" instead of
+#  "/tp @a" accident, for kill, tp, data -- any command that targets @e.
+#
+#    /tp @e noobgamer23           -> blocked
+#    /tp @e noobgamer23 confirm   -> runs /tp @e noobgamer23
 # =====================================================================
 
 # Selectors that require confirmation. @e is the dangerous one, but you
@@ -13,10 +15,8 @@
 guarded-selectors:
   - "@e"
 
-# How many seconds you have to re-type the same command to confirm it.
-# After this the pending command is forgotten and typing it again just
-# warns you a fresh time.
-confirmation-timeout-seconds: 30
+# The word you add to the end of a command to confirm it.
+confirmation-keyword: "confirm"
 
 # If true, players/console with the "antientityteleport.bypass" permission
 # skip the confirmation entirely and their @e commands run immediately.
@@ -30,6 +30,6 @@ log-to-console: true
 messages:
   prefix: "&8[&cAntiEntityTeleport&8]&r "
   warning: "&e⚠ Whoa! Your command targets &c{selector}&e (ALL entities). Double-check this is what you want."
-  how-to-confirm: "&7Type the &fexact same command&7 again within &f{timeout}s&7 to run it. Do nothing to cancel."
-  click-to-confirm: "&a[Click here to run it again & CONFIRM]"
+  how-to-confirm: "&7Re-type the same command with &f{keyword}&7 on the end to run it. Example: &f{command}"
+  click-to-confirm: "&a[Click here to add '&fconfirm&a' & run it]"
   confirmed: "&aConfirmed. Running your command..."

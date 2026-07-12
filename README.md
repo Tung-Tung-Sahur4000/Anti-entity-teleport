@@ -8,11 +8,11 @@ you meant `@a` (all players), `@p`, or a player's name.
 > You typed `/tp @e noobgamer23`.
 > Every mob, item, armor stand and painting just got yanked across the map.
 
-With this plugin, **the first time you run a command containing `@e` it is
-blocked** and you have to run the **exact same command again to confirm** — so a
-slip of the finger can never wreck your world again. There is **no custom
-command to learn**: the vanilla command itself is the confirmation, and it all
-works through event listeners.
+With this plugin, **any command containing `@e` is blocked** and only runs if
+you re-type the **same command with the word `confirm` on the end** — so a slip
+of the finger can never wreck your world again. There is **no custom command to
+learn**: it works on any vanilla command (kill, tp, data, …) and is handled
+entirely through event listeners.
 
 ## How it works
 
@@ -22,15 +22,19 @@ works through event listeners.
 
    ```
    [AntiEntityTeleport] ⚠ Whoa! Your command targets @e (ALL entities). Double-check this is what you want.
-   [AntiEntityTeleport] Type the exact same command again within 30s to run it. Do nothing to cancel.
-   [AntiEntityTeleport] [Click here to run it again & CONFIRM]
+   [AntiEntityTeleport] Re-type the same command with confirm on the end to run it. Example: /tp @e noobgamer23 confirm
+   [AntiEntityTeleport] [Click here to add 'confirm' & run it]
    ```
 
-3. If you really meant it, **run the same command again** (press ↑ then Enter,
-   or click the button). This second, identical run within the window is
-   allowed through and executes exactly as typed.
-4. If it was a typo, just do nothing — the pending command expires and nothing
-   happens.
+3. If you really meant it, run the same command with **`confirm`** appended
+   (or click the button):
+
+   ```
+   /tp @e noobgamer23 confirm
+   ```
+
+   The plugin strips the `confirm` and runs `/tp @e noobgamer23` exactly as typed.
+4. If it was a typo, just do nothing — nothing happens.
 
 Matching is whole-token, so `@e` and `@e[type=item]` are caught, while things
 like `@a`, `@p`, `@s` and words such as `@executor` are left alone.
@@ -46,7 +50,7 @@ like `@a`, `@p`, `@s` and words such as `@executor` are left alone.
 ```yaml
 guarded-selectors:
   - "@e"                       # add more if you like, e.g. "@r"
-confirmation-timeout-seconds: 30
+confirmation-keyword: "confirm"
 allow-bypass-permission: true  # honor antientityteleport.bypass
 log-to-console: true           # print a warning when a command is caught
 messages:
