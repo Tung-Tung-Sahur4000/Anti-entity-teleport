@@ -14,10 +14,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Compile to Java 8 bytecode so the one jar loads on every server JVM
-             from Java 8 through 21 (Paper 1.16.5 up to 1.21.x). The code only
-             uses Java 8 APIs, so there is no downside. -->
-        <maven.compiler.release>8</maven.compiler.release>
+        <!-- Target 1.20+ only. 1.20-1.20.4 run on Java 17, while 1.20.5+, 1.21
+             and 26.1 run on Java 21. Compiling to Java 17 bytecode lets the one
+             jar load on both (Java 17 bytecode runs on any Java 17+ runtime). -->
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <repositories>
