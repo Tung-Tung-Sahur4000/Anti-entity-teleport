@@ -114,3 +114,10 @@ mvn clean package
 The finished plugin is written to `target/AntiEntityTeleport-1.0.0.jar`.
 Drop it into your server's `plugins/` folder and restart. Tested against the
 Spigot API 1.20.4 and compatible with Paper and any 1.16+ server.
+
+### Don't want to build it yourself?
+
+Every push is built automatically by GitHub Actions (`.github/workflows/build.yml`).
+Grab the compiled jar from the **Actions** tab → pick the latest run → download the
+**AntiEntityTeleport** artifact. Pushing a tag like `v1.0.0` also attaches the jar
+to a GitHub Release.
