@@ -1,8 +1,10 @@
 # =====================================================================
 #  AntiEntityTeleport configuration
-#  Any command that contains a guarded selector (@e by default) is held
-#  back and must be confirmed before it runs. This stops the classic
-#  "/tp @e" instead of "/tp @a" accident.
+#  Any vanilla command that contains a guarded selector (@e by default)
+#  is held back the first time and only runs if you type the SAME command
+#  again to confirm. This stops the classic "/tp @e" instead of "/tp @a"
+#  accident. There is no custom command -- the vanilla command IS the
+#  confirmation.
 # =====================================================================
 
 # Selectors that require confirmation. @e is the dangerous one, but you
@@ -11,8 +13,9 @@
 guarded-selectors:
   - "@e"
 
-# How many seconds a pending command stays valid after the warning.
-# After this it expires and you have to type the command again.
+# How many seconds you have to re-type the same command to confirm it.
+# After this the pending command is forgotten and typing it again just
+# warns you a fresh time.
 confirmation-timeout-seconds: 30
 
 # If true, players/console with the "antientityteleport.bypass" permission
@@ -27,11 +30,6 @@ log-to-console: true
 messages:
   prefix: "&8[&cAntiEntityTeleport&8]&r "
   warning: "&e⚠ Whoa! Your command targets &c{selector}&e (ALL entities). Double-check this is what you want."
-  how-to-confirm: "&7Type &a/aetp confirm&7 to run it, or &c/aetp cancel&7 to drop it. Expires in &f{timeout}s&7."
-  click-to-confirm: "&a[Click here to CONFIRM]"
+  how-to-confirm: "&7Type the &fexact same command&7 again within &f{timeout}s&7 to run it. Do nothing to cancel."
+  click-to-confirm: "&a[Click here to run it again & CONFIRM]"
   confirmed: "&aConfirmed. Running your command..."
-  cancelled: "&cCancelled. Your command was NOT run."
-  nothing-pending: "&7You have no command waiting for confirmation."
-  expired: "&cThat command expired. Type it again if you still want to run it."
-  reloaded: "&aConfiguration reloaded."
-  no-permission: "&cYou don't have permission to do that."

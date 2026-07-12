@@ -15,9 +15,11 @@ import java.util.regex.Pattern;
  *
  * <p>Every command a player or the console runs is inspected. If it contains a
  * guarded target selector (by default {@code @e}, which targets ALL entities in
- * the world) the command is cancelled and the sender must confirm it with
- * {@code /aetp confirm}. This turns the classic "I typed /tp @e instead of
- * /tp @a" disaster into a harmless double-check.</p>
+ * the world) the command is cancelled the first time and only runs when the
+ * exact same command is typed again within a short window. There is no custom
+ * command to learn: the vanilla command itself is the confirmation. This turns
+ * the classic "I typed /tp @e instead of /tp @a" disaster into a harmless
+ * double-check.</p>
  */
 public final class AntiEntityTeleport extends JavaPlugin {
 
@@ -37,12 +39,6 @@ public final class AntiEntityTeleport extends JavaPlugin {
         loadSettings();
 
         getServer().getPluginManager().registerEvents(new CommandGuardListener(this), this);
-
-        ConfirmCommand confirmCommand = new ConfirmCommand(this);
-        if (getCommand("aetp") != null) {
-            getCommand("aetp").setExecutor(confirmCommand);
-            getCommand("aetp").setTabCompleter(confirmCommand);
-        }
 
         getLogger().info("Enabled. Guarding selectors: " + describeGuardedSelectors());
     }
@@ -101,40 +97,34 @@ public final class AntiEntityTeleport extends JavaPlugin {
 
     // ---- Pending command storage ------------------------------------
 
-    public void storePending(CommandSender sender, String commandWithoutSlash) {
+    /** Remembers that this sender was warned about this exact command. */
+    public void storePending(CommandSender sender, String normalizedCommand) {
         pending.put(senderKey(sender),
-                new PendingCommand(commandWithoutSlash, System.currentTimeMillis() + confirmationTimeoutMillis));
+                new PendingCommand(normalizedCommand, System.currentTimeMillis() + confirmationTimeoutMillis));
     }
 
     /**
-     * Removes and returns the sender's pending command, or {@code null} if there
-     * is none or it has expired. Expired entries are cleared as a side effect.
+     * If the sender has an unexpired pending command equal to the one they just
+     * typed, consumes it and returns {@code true} (meaning "confirmed, let it
+     * run"). Otherwise returns {@code false}, and any stale/expired pending is
+     * cleared as a side effect.
      */
-    public PendingCommand takePending(CommandSender sender) {
-        PendingCommand entry = pending.remove(senderKey(sender));
-        if (entry == null) {
-            return null;
-        }
-        if (entry.isExpired()) {
-            return null;
-        }
-        return entry;
-    }
-
-    public boolean hasPending(CommandSender sender) {
-        PendingCommand entry = pending.get(senderKey(sender));
+    public boolean consumeIfMatches(CommandSender sender, String normalizedCommand) {
+        String key = senderKey(sender);
+        PendingCommand entry = pending.get(key);
         if (entry == null) {
             return false;
         }
         if (entry.isExpired()) {
-            pending.remove(senderKey(sender));
+            pending.remove(key);
             return false;
         }
-        return true;
-    }
-
-    public void clearPending(CommandSender sender) {
-        pending.remove(senderKey(sender));
+        if (entry.getCommand().equals(normalizedCommand)) {
+            pending.remove(key);
+            return true;
+        }
+        // A different guarded command -- it needs its own confirmation.
+        return false;
     }
 
     /** A stable identity for a sender so console and each player get their own slot. */
@@ -143,6 +133,14 @@ public final class AntiEntityTeleport extends JavaPlugin {
             return "player:" + ((org.bukkit.entity.Player) sender).getUniqueId();
         }
         return "other:" + sender.getName();
+    }
+
+    /** Collapses runs of whitespace and trims, so re-typing with odd spacing still matches. */
+    public String normalizeCommand(String command) {
+        if (command == null) {
+            return "";
+        }
+        return command.trim().replaceAll("\\s+", " ");
     }
 
     // ---- Config accessors -------------------------------------------

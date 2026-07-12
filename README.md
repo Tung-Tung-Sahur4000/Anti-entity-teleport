@@ -8,43 +8,38 @@ you meant `@a` (all players), `@p`, or a player's name.
 > You typed `/tp @e noobgamer23`.
 > Every mob, item, armor stand and painting just got yanked across the map.
 
-With this plugin, **any command containing `@e` is paused and must be confirmed
-before it runs** — so a slip of the finger can never wreck your world again.
+With this plugin, **the first time you run a command containing `@e` it is
+blocked** and you have to run the **exact same command again to confirm** — so a
+slip of the finger can never wreck your world again. There is **no custom
+command to learn**: the vanilla command itself is the confirmation, and it all
+works through event listeners.
 
 ## How it works
 
-1. A player or the console runs a command that contains `@e`
+1. You run a vanilla command that contains `@e`
    (e.g. `/tp @e noobgamer23`, `/kill @e`).
-2. The command is **cancelled before it does anything** and a warning appears:
+2. A listener **cancels it before it does anything** and warns you:
 
    ```
    [AntiEntityTeleport] ⚠ Whoa! Your command targets @e (ALL entities). Double-check this is what you want.
-   [AntiEntityTeleport] Type /aetp confirm to run it, or /aetp cancel to drop it. Expires in 30s.
-   [AntiEntityTeleport] [Click here to CONFIRM]
+   [AntiEntityTeleport] Type the exact same command again within 30s to run it. Do nothing to cancel.
+   [AntiEntityTeleport] [Click here to run it again & CONFIRM]
    ```
 
-3. If you really meant it, run **`/aetp confirm`** (or click the button) and the
-   original command runs exactly as typed. Otherwise it just expires — no harm done.
+3. If you really meant it, **run the same command again** (press ↑ then Enter,
+   or click the button). This second, identical run within the window is
+   allowed through and executes exactly as typed.
+4. If it was a typo, just do nothing — the pending command expires and nothing
+   happens.
 
 Matching is whole-token, so `@e` and `@e[type=item]` are caught, while things
 like `@a`, `@p`, `@s` and words such as `@executor` are left alone.
-
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `/aetp confirm` | Run the command you were just warned about |
-| `/aetp cancel` | Throw the pending command away |
-| `/aetp reload` | Reload `config.yml` (needs `antientityteleport.admin`) |
-
-Aliases: `/antientityteleport`, `/entityconfirm`.
 
 ## Permissions
 
 | Permission | Default | Meaning |
 | --- | --- | --- |
 | `antientityteleport.bypass` | `false` | Skip confirmation and run `@e` commands immediately. Give only to people you trust. |
-| `antientityteleport.admin` | `op` | Allowed to use `/aetp reload`. |
 
 ## Configuration (`config.yml`)
 
@@ -58,7 +53,7 @@ messages:
   # fully customizable, & color codes supported
 ```
 
-Change any value, then run `/aetp reload`.
+Change any value, then reload the plugin (e.g. server restart, or `/reload`).
 
 ## Building
 
