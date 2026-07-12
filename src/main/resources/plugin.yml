@@ -1,0 +1,23 @@
+name: ${project.name}
+version: ${project.version}
+main: com.tungtungsahur.antientityteleport.AntiEntityTeleport
+api-version: "1.16"
+description: ${project.description}
+author: Tung-Tung-Sahur4000
+
+commands:
+  aetp:
+    description: Confirm or cancel a pending @e command, or reload the plugin config.
+    usage: |
+      /aetp confirm - run the command you were warned about
+      /aetp cancel  - throw away the pending command
+      /aetp reload  - reload config.yml (needs antientityteleport.admin)
+    aliases: [antientityteleport, entityconfirm]
+
+permissions:
+  antientityteleport.bypass:
+    description: Run @e commands with no confirmation. Give this only to people you trust.
+    default: false
+  antientityteleport.admin:
+    description: Reload the plugin configuration with /aetp reload.
+    default: op

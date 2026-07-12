@@ -1,0 +1,37 @@
+# =====================================================================
+#  AntiEntityTeleport configuration
+#  Any command that contains a guarded selector (@e by default) is held
+#  back and must be confirmed before it runs. This stops the classic
+#  "/tp @e" instead of "/tp @a" accident.
+# =====================================================================
+
+# Selectors that require confirmation. @e is the dangerous one, but you
+# can add more if you like (for example "@r"). Matching is whole-token:
+# "@e" and "@e[type=...]" match, but "@executor" does NOT.
+guarded-selectors:
+  - "@e"
+
+# How many seconds a pending command stays valid after the warning.
+# After this it expires and you have to type the command again.
+confirmation-timeout-seconds: 30
+
+# If true, players/console with the "antientityteleport.bypass" permission
+# skip the confirmation entirely and their @e commands run immediately.
+allow-bypass-permission: true
+
+# If true, a warning line is printed to the server console every time a
+# guarded command is caught. Handy for spotting fat-finger accidents.
+log-to-console: true
+
+# ---- Messages (color codes with & are supported) --------------------
+messages:
+  prefix: "&8[&cAntiEntityTeleport&8]&r "
+  warning: "&e⚠ Whoa! Your command targets &c{selector}&e (ALL entities). Double-check this is what you want."
+  how-to-confirm: "&7Type &a/aetp confirm&7 to run it, or &c/aetp cancel&7 to drop it. Expires in &f{timeout}s&7."
+  click-to-confirm: "&a[Click here to CONFIRM]"
+  confirmed: "&aConfirmed. Running your command..."
+  cancelled: "&cCancelled. Your command was NOT run."
+  nothing-pending: "&7You have no command waiting for confirmation."
+  expired: "&cThat command expired. Type it again if you still want to run it."
+  reloaded: "&aConfiguration reloaded."
+  no-permission: "&cYou don't have permission to do that."
