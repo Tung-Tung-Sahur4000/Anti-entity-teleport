@@ -1,0 +1,11 @@
+name: ${project.name}
+version: ${project.version}
+main: com.tungtungsahur.antientityteleport.AntiEntityTeleport
+api-version: "1.20"
+description: ${project.description}
+author: Tung-Tung-Sahur4000
+
+permissions:
+  antientityteleport.bypass:
+    description: Run @e commands with no confirmation. Give this only to people you trust.
+    default: false
