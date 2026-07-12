@@ -180,9 +180,12 @@ public final class FunctionScanner {
         return sawUnreadable ? ScanResult.unreadable() : ScanResult.none();
     }
 
+    @SuppressWarnings("deprecation")
     private List<String> readTagValues(String json) {
         List<String> ids = new ArrayList<>();
-        JsonElement root = JsonParser.parseString(json);
+        // Instance parse (not the static parseString) so this works with the
+        // older Gson bundled by 1.17/1.18 servers as well as modern ones.
+        JsonElement root = new JsonParser().parse(json);
         if (!root.isJsonObject()) {
             return ids;
         }

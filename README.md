@@ -80,6 +80,25 @@ for an automated, redstone-triggered block anyway. Command blocks are therefore
 silently breaks a working contraption. If you want command-block protection,
 that needs a heavier packet/NMS approach — open an issue and we can discuss it.
 
+## Supported versions
+
+Built against the Bukkit API using only long-stable APIs and compiled to **Java 8
+bytecode**, so the same single jar runs on a wide range of servers:
+
+| Server software | Versions | Server Java |
+| --- | --- | --- |
+| **Paper** (recommended) | **1.16.5 – 1.21.x** | 8+ (whatever the MC version needs) |
+| Spigot / Bukkit | 1.16.5 – 1.21.x | 8+ |
+| Purpur, Pufferfish, other Paper forks | same as Paper | 8+ |
+
+Because it targets Java 8 bytecode, the jar loads no matter which Java your
+server runs (Java 8/11/16 for older MC, 17 for 1.18–1.20.4, 21 for 1.20.5+).
+No per-version build is needed — one jar covers them all.
+
+> The `@e` / function / command-block behavior described above is identical on
+> every supported version. Function scanning also handles the datapack folder
+> rename (`functions/` on 1.13–1.20, `function/` on 1.21+) automatically.
+
 ## Permissions
 
 | Permission | Default | Meaning |
@@ -112,8 +131,10 @@ mvn clean package
 ```
 
 The finished plugin is written to `target/AntiEntityTeleport-1.0.0.jar`.
-Drop it into your server's `plugins/` folder and restart. Tested against the
-Spigot API 1.20.4 and compatible with Paper and any 1.16+ server.
+Drop it into your server's `plugins/` folder and restart. It is compiled
+against the Spigot API 1.20.4 but emits Java 8 bytecode, so the one jar runs on
+Paper/Spigot 1.16.5 – 1.21.x (see **Supported versions** above). JDK 17 is used
+only to *build* it; your server can run any Java 8+.
 
 ### Don't want to build it yourself?
 
