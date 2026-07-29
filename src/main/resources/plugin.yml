@@ -9,3 +9,6 @@ permissions:
   antientityteleport.bypass:
     description: Run @e commands with no confirmation. Give this only to people you trust.
     default: false
+  antientityteleport.maintenance.bypass:
+    description: Use /home normally while the Home plugin is flagged as under maintenance.
+    default: false

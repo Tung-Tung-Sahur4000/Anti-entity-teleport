@@ -70,6 +70,35 @@ Functions that live inside the server jar / bundled datapacks can't be read from
 disk; by default those are allowed through (they're pre-written, not typos). Set
 `confirm-unreadable-functions: true` if you want to be asked about those too.
 
+## Home plugin maintenance notice
+
+While the Home plugin is being worked on, `/home` is **intercepted before it
+gets there**. The command is cancelled and the player is told what's going on,
+with an **ETA that is computed from the clock**, not hard-coded:
+
+```
+[AntiEntityTeleport] ⚠ Home plugin under maintenance, be right back!
+[AntiEntityTeleport] ETA 2:00 PM IST (it's 12:00 PM IST now -- about 2h away).
+```
+
+The ETA is *the current time in IST plus `eta-hours` (2 by default)*, so it
+stays correct all day:
+
+| Player runs `/home` at | Message says ETA |
+| --- | --- |
+| 12:00 PM IST | 2:00 PM IST |
+| 3:00 PM IST | 5:00 PM IST |
+| 9:45 AM IST | 11:45 AM IST |
+
+Matching is on the bare command label, ignoring case and any `plugin:` prefix —
+so `/home`, `/Home`, `/home base` and `/essentials:home` are all caught, while
+`/sethome` and `/homes` are not (add them to `home-maintenance.commands` if you
+want them gated too). Command blocks are skipped, since they can't read chat.
+
+Staff who need to actually test the Home plugin can be given
+`antientityteleport.maintenance.bypass`. When the plugin is back, set
+`home-maintenance.enabled: false` and reload.
+
 ## Command blocks
 
 Bukkit provides **no event** for a command block executing a command, so a
@@ -104,6 +133,7 @@ single build. No per-version jar is needed.
 | Permission | Default | Meaning |
 | --- | --- | --- |
 | `antientityteleport.bypass` | `false` | Skip confirmation and run `@e` commands immediately. Give only to people you trust. |
+| `antientityteleport.maintenance.bypass` | `false` | Use `/home` normally while the Home plugin is flagged as under maintenance. |
 
 ## Configuration (`config.yml`)
 
@@ -116,6 +146,13 @@ confirm-unreadable-functions: false
 guard-command-blocks: false      # leave command blocks alone (see above)
 allow-bypass-permission: true    # honor antientityteleport.bypass
 log-to-console: true             # print a warning when a command is caught
+home-maintenance:
+  enabled: true                  # intercept /home with a maintenance notice
+  commands: ["home"]             # labels to gate (case- and namespace-insensitive)
+  timezone: "Asia/Kolkata"       # IST; the ETA clock is read in this zone
+  timezone-label: "IST"          # short name shown in the message
+  eta-hours: 2                   # ETA = current time + this many hours
+  allow-bypass-permission: true  # honor antientityteleport.maintenance.bypass
 messages:
   # fully customizable, & color codes supported
 ```

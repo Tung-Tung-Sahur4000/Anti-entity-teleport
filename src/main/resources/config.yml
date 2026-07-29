@@ -46,6 +46,40 @@ allow-bypass-permission: true
 # guarded command is caught. Handy for spotting fat-finger accidents.
 log-to-console: true
 
+# ---- Home plugin maintenance notice ---------------------------------
+# While the Home plugin is being worked on, /home is intercepted before it
+# reaches it: the command is cancelled and the player is told it is under
+# maintenance, with an ETA.
+#
+# The ETA is worked out from the CURRENT time in the timezone below, plus
+# "eta-hours" -- it is not a fixed string. With the defaults (IST, 2 hours):
+#
+#    someone runs /home at 12:00 PM IST  ->  ETA 2:00 PM IST
+#    someone runs /home at  3:00 PM IST  ->  ETA 5:00 PM IST
+home-maintenance:
+  # Turn this off (or delete the section) once the Home plugin is back.
+  enabled: true
+
+  # Command labels to intercept. Written without a slash; a "plugin:" prefix
+  # and letter case are ignored, so "home" also catches /Home and
+  # /essentials:home. Add aliases like "sethome" or "delhome" if you want
+  # those covered too.
+  commands:
+    - "home"
+
+  # Timezone the ETA clock is read in (an IANA zone id). IST = Asia/Kolkata.
+  timezone: "Asia/Kolkata"
+
+  # Short name shown in the message next to the times.
+  timezone-label: "IST"
+
+  # How far ahead of "now" the ETA is, in hours.
+  eta-hours: 2
+
+  # If true, anyone with "antientityteleport.maintenance.bypass" can still run
+  # /home normally -- handy for the staff actually fixing the plugin.
+  allow-bypass-permission: true
+
 # ---- Messages (color codes with & are supported) --------------------
 messages:
   prefix: "&8[&cAntiEntityTeleport&8]&r "
@@ -55,3 +89,5 @@ messages:
   how-to-confirm: "&7Re-type the same command with &f{keyword}&7 on the end to run it. Example: &f{command}"
   click-to-confirm: "&a[Click here to add '&fconfirm&a' & run it]"
   confirmed: "&aConfirmed. Running your command..."
+  maintenance: "&e⚠ Home plugin under maintenance, be right back!"
+  maintenance-eta: "&7ETA &f{eta} {timezone}&7 (it's &f{now} {timezone}&7 now -- about &f{hours}h&7 away)."

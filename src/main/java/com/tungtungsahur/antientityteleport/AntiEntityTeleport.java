@@ -3,6 +3,8 @@ package com.tungtungsahur.antientityteleport;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -38,15 +40,30 @@ public final class AntiEntityTeleport extends JavaPlugin {
     private boolean confirmUnreadableFunctions;
     private boolean guardCommandBlocks;
 
+    /** Home-plugin maintenance notice settings. */
+    private boolean homeMaintenanceEnabled;
+    private List<String> maintenanceCommands = new ArrayList<>();
+    private ZoneId maintenanceZone = ZoneId.of(DEFAULT_MAINTENANCE_TIMEZONE);
+    private String maintenanceTimezoneLabel;
+    private int maintenanceEtaHours;
+    private boolean maintenanceBypassAllowed;
+
+    private static final String DEFAULT_MAINTENANCE_TIMEZONE = "Asia/Kolkata";
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
         loadSettings();
 
         getServer().getPluginManager().registerEvents(new CommandGuardListener(this), this);
+        getServer().getPluginManager().registerEvents(new HomeMaintenanceListener(this), this);
 
         getLogger().info("Enabled. Guarding selectors: " + describeGuardedSelectors()
                 + " (confirm with the word '" + confirmationKeyword + "').");
+        if (homeMaintenanceEnabled) {
+            getLogger().info("Home maintenance notice is ON for: " + describeMaintenanceCommands()
+                    + " (ETA = now + " + maintenanceEtaHours + "h, " + maintenanceTimezoneLabel + ").");
+        }
     }
 
     /** (Re)reads all values from config.yml into memory. */
@@ -78,6 +95,47 @@ public final class AntiEntityTeleport extends JavaPlugin {
         this.scanFunctions = getConfig().getBoolean("scan-functions", true);
         this.confirmUnreadableFunctions = getConfig().getBoolean("confirm-unreadable-functions", false);
         this.guardCommandBlocks = getConfig().getBoolean("guard-command-blocks", false);
+
+        loadMaintenanceSettings();
+    }
+
+    /** Reads the {@code home-maintenance} section of config.yml. */
+    private void loadMaintenanceSettings() {
+        this.homeMaintenanceEnabled = getConfig().getBoolean("home-maintenance.enabled", true);
+
+        List<String> rawCommands = getConfig().getStringList("home-maintenance.commands");
+        if (rawCommands.isEmpty()) {
+            rawCommands = new ArrayList<>();
+            rawCommands.add("home");
+        }
+        List<String> normalized = new ArrayList<>();
+        for (String command : rawCommands) {
+            // Store bare, lowercase labels so "/home", "Home" and "essentials:home"
+            // all compare equal to what the listener extracts from a command line.
+            String label = HomeMaintenanceListener.rootLabel(command);
+            if (!label.isEmpty() && !normalized.contains(label)) {
+                normalized.add(label);
+            }
+        }
+        this.maintenanceCommands = normalized;
+
+        String zoneId = getConfig().getString("home-maintenance.timezone", DEFAULT_MAINTENANCE_TIMEZONE);
+        try {
+            this.maintenanceZone = ZoneId.of(zoneId == null ? DEFAULT_MAINTENANCE_TIMEZONE : zoneId.trim());
+        } catch (DateTimeException ex) {
+            getLogger().warning("Unknown timezone '" + zoneId + "' in home-maintenance.timezone; "
+                    + "falling back to " + DEFAULT_MAINTENANCE_TIMEZONE + " (IST).");
+            this.maintenanceZone = ZoneId.of(DEFAULT_MAINTENANCE_TIMEZONE);
+        }
+
+        String label = getConfig().getString("home-maintenance.timezone-label", "IST");
+        this.maintenanceTimezoneLabel = (label == null || label.trim().isEmpty()) ? "IST" : label.trim();
+
+        int etaHours = getConfig().getInt("home-maintenance.eta-hours", 2);
+        this.maintenanceEtaHours = etaHours < 0 ? 0 : etaHours;
+
+        this.maintenanceBypassAllowed =
+                getConfig().getBoolean("home-maintenance.allow-bypass-permission", true);
     }
 
     /**
@@ -153,6 +211,34 @@ public final class AntiEntityTeleport extends JavaPlugin {
         return functionScanner;
     }
 
+    public boolean isHomeMaintenanceEnabled() {
+        return homeMaintenanceEnabled;
+    }
+
+    public boolean isMaintenanceBypassAllowed() {
+        return maintenanceBypassAllowed;
+    }
+
+    /**
+     * True if the given bare command label (already lowercase, no slash and no
+     * "plugin:" namespace) is gated by the maintenance notice.
+     */
+    public boolean isMaintenanceCommand(String label) {
+        return label != null && !label.isEmpty() && maintenanceCommands.contains(label);
+    }
+
+    public ZoneId getMaintenanceZone() {
+        return maintenanceZone;
+    }
+
+    public String getMaintenanceTimezoneLabel() {
+        return maintenanceTimezoneLabel;
+    }
+
+    public int getMaintenanceEtaHours() {
+        return maintenanceEtaHours;
+    }
+
     /** Fetches a message from config, applies color codes and known placeholders. */
     public String message(String key, String... replacements) {
         String raw = getConfig().getString("messages." + key, "");
@@ -176,6 +262,17 @@ public final class AntiEntityTeleport extends JavaPlugin {
                 sb.append(", ");
             }
             sb.append(guardedSelectors.get(i).raw());
+        }
+        return sb.length() == 0 ? "(none)" : sb.toString();
+    }
+
+    private String describeMaintenanceCommands() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < maintenanceCommands.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append('/').append(maintenanceCommands.get(i));
         }
         return sb.length() == 0 ? "(none)" : sb.toString();
     }
