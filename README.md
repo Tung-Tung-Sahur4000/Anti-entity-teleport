@@ -90,6 +90,31 @@ stays correct all day:
 | 3:00 PM IST | 5:00 PM IST |
 | 9:45 AM IST | 11:45 AM IST |
 
+### Getting in front of the Home plugin
+
+Bukkit's priority names are inverted from intuition: **`LOWEST` runs first** and
+`HIGHEST` runs last. To be sure the Home plugin never gets the command, this
+listener takes both ends:
+
+| Where | Priority | What it does |
+| --- | --- | --- |
+| First word | `LOWEST` | Cancels `/home` and sends the notice, before any other listener or the Home plugin's own command executor runs. |
+| Last word | `HIGHEST` | If a plugin further down the chain called `setCancelled(false)` to put the command back, cancels it again — silently, since the player was already told. |
+
+Two more details make the ordering airtight:
+
+* The `LOWEST` handler uses `ignoreCancelled = false`, so even if a home plugin
+  cancelled the event at `LOWEST` before us and handled `/home` internally, we
+  still send the maintenance notice instead of staying quiet.
+* Handlers on the *same* priority run in **plugin load order**, so `plugin.yml`
+  declares `loadbefore` for the common home providers (Essentials, CMI,
+  HuskHomes, …). Missing plugins are ignored; add your own home plugin's name
+  to that list if it isn't there.
+
+`PlayerCommandPreprocessEvent` fires before Bukkit dispatches the command at
+all, so cancelling it stops the Home plugin's `onCommand` from ever being
+called — there's no window in which it can run first.
+
 Matching is on the bare command label, ignoring case and any `plugin:` prefix —
 so `/home`, `/Home`, `/home base` and `/essentials:home` are all caught, while
 `/sethome` and `/homes` are not (add them to `home-maintenance.commands` if you

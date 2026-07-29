@@ -5,6 +5,20 @@ api-version: "1.20"
 description: ${project.description}
 author: Tung-Tung-Sahur4000
 
+# Event handlers on the same priority run in plugin load order, so load ahead of
+# the usual home providers to win that tie as well. Names that aren't installed
+# are ignored, so this is safe to leave as-is; add your own home plugin's name
+# (as written in ITS plugin.yml) if it isn't listed here.
+loadbefore:
+  - Home
+  - Homes
+  - Essentials
+  - EssentialsX
+  - CMI
+  - HuskHomes
+  - AdvancedTeleport
+  - SetHome
+
 permissions:
   antientityteleport.bypass:
     description: Run @e commands with no confirmation. Give this only to people you trust.

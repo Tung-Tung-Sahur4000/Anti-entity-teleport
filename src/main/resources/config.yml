@@ -62,8 +62,9 @@ home-maintenance:
 
   # Command labels to intercept. Written without a slash; a "plugin:" prefix
   # and letter case are ignored, so "home" also catches /Home and
-  # /essentials:home. Add aliases like "sethome" or "delhome" if you want
-  # those covered too.
+  # /essentials:home. Aliases are NOT resolved for you -- if your server lets
+  # players type /h, list it here too, along with anything else you want gated
+  # such as "sethome" or "delhome".
   commands:
     - "home"
 

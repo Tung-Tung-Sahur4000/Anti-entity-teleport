@@ -36,18 +36,24 @@ public final class HomeMaintenanceListener implements Listener {
         this.plugin = plugin;
     }
 
-    // LOWEST so the command is stopped before anything else (including the @e
-    // guard) gets a chance to look at it.
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+    // ---- First word ------------------------------------------------
+    // LOWEST runs BEFORE every other priority, so we cancel the command before
+    // the Home plugin's own listener or its command executor ever sees it.
+    // ignoreCancelled = false on purpose: if a home plugin also registered at
+    // LOWEST and got in ahead of us (same-priority ties are broken by plugin
+    // load order), the event arrives already cancelled -- we still want to say
+    // why, instead of silently letting its own handling stand.
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onPlayerCommandEarly(PlayerCommandPreprocessEvent event) {
         if (isUnderMaintenance(event.getPlayer(), event.getMessage())) {
             event.setCancelled(true);
             announce(event.getPlayer());
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onServerCommand(ServerCommandEvent event) {
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void onServerCommandEarly(ServerCommandEvent event) {
         // A command block can't read chat, so telling it about maintenance is
         // pointless; leave it alone exactly like the @e guard does.
         if (event.getSender() instanceof BlockCommandSender) {
@@ -56,6 +62,31 @@ public final class HomeMaintenanceListener implements Listener {
         if (isUnderMaintenance(event.getSender(), event.getCommand())) {
             event.setCancelled(true);
             announce(event.getSender());
+        }
+    }
+
+    // ---- Last word -------------------------------------------------
+    // A plugin further down the chain is allowed to call setCancelled(false)
+    // and put the command back. HIGHEST runs after every normal handler, so
+    // re-cancelling here means the maintenance gate has the final say. Silent:
+    // the sender was already told at LOWEST.
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onPlayerCommandLate(PlayerCommandPreprocessEvent event) {
+        if (!event.isCancelled() && isUnderMaintenance(event.getPlayer(), event.getMessage())) {
+            event.setCancelled(true);
+            logOverride(event.getPlayer(), event.getMessage());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onServerCommandLate(ServerCommandEvent event) {
+        if (event.getSender() instanceof BlockCommandSender) {
+            return;
+        }
+        if (!event.isCancelled() && isUnderMaintenance(event.getSender(), event.getCommand())) {
+            event.setCancelled(true);
+            logOverride(event.getSender(), event.getCommand());
         }
     }
 
@@ -91,6 +122,18 @@ public final class HomeMaintenanceListener implements Listener {
             plugin.getLogger().info(sender.getName()
                     + " tried a home command while the Home plugin is under maintenance"
                     + " (now " + nowText + " " + zoneLabel + ", ETA " + etaText + " " + zoneLabel + ").");
+        }
+    }
+
+    /**
+     * Notes that some other plugin put a gated command back after we cancelled
+     * it, and that we cancelled it again. Worth seeing in the log, since it
+     * means another plugin is fighting the maintenance gate.
+     */
+    private void logOverride(CommandSender sender, String raw) {
+        if (plugin.isLogToConsole()) {
+            plugin.getLogger().warning("Another plugin un-cancelled '" + raw + "' from "
+                    + sender.getName() + "; re-cancelled it (home maintenance has the final say).");
         }
     }
 
